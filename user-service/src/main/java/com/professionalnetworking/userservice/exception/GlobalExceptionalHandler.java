@@ -1,14 +1,18 @@
-package com.professionalnetworking.postsservice.exception;
+package com.professionalnetworking.userservice.exception;
 
-import com.professionalnetworking.postsservice.exception.custom_exception.BadRequestException;
-import com.professionalnetworking.postsservice.exception.custom_exception.ResourceNotFoundException;
+import com.professionalnetworking.userservice.exception.custom_exception.BadRequestException;
+import com.professionalnetworking.userservice.exception.custom_exception.ResourceNotFoundException;
 import jakarta.persistence.NonUniqueResultException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.nio.file.AccessDeniedException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionalHandler {
@@ -34,6 +38,19 @@ public class GlobalExceptionalHandler {
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidationException(MethodArgumentNotValidException exception){
+        Map<String, String> errors = new HashMap<>();
+        exception.getBindingResult().getAllErrors().forEach(error -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+
+        ApiError apiError = new ApiError("Validation failed: " + errors.toString(), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(NonUniqueResultException.class)
     public ResponseEntity<ApiError> handleNonUniqueResultException(NonUniqueResultException exception) {
         ApiError apiError = new ApiError("Multiple records found where only one was expected", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -54,4 +71,5 @@ public class GlobalExceptionalHandler {
 
         return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
     }
+
 }
