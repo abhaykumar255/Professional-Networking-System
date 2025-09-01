@@ -1,0 +1,28 @@
+# IDE files
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# VS Code files
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+target/
+build/
+out/
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
