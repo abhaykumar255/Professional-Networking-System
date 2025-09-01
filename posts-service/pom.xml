@@ -12,7 +12,7 @@
     <artifactId>posts-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>posts-service</name>
-    <description>posts-service</description>
+    <description>Posts Service in Professional Networking System</description>
     <url/>
     <licenses>
         <license/>
