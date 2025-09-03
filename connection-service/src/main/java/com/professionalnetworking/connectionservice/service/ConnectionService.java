@@ -1,5 +1,6 @@
 package com.professionalnetworking.connectionservice.service;
 
+import com.professionalnetworking.connectionservice.auth.UserContextHolder;
 import com.professionalnetworking.connectionservice.entity.Person;
 import com.professionalnetworking.connectionservice.repository.ConnectionRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,8 @@ public class ConnectionService {
 
     private final ConnectionRepository connectionRepository;
 
-    public List<Person> getFirstDegreeConnections(Long userId) {
+    public List<Person> getMyFirstDegreeConnections() {
+        Long userId = UserContextHolder.getCurrentUserId();
         log.info("Retrieving first degree connections for user with id: {}", userId );
         return connectionRepository.getFirstDegreeConnections(userId);
     }
