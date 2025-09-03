@@ -1,5 +1,8 @@
 package com.professionalnetworking.postsservice.services;
 
+import com.professionalnetworking.postsservice.auth.UserContextHolder;
+import com.professionalnetworking.postsservice.clients.ConnectionClients;
+import com.professionalnetworking.postsservice.dto.PersonDTO;
 import com.professionalnetworking.postsservice.dto.PostDTO;
 import com.professionalnetworking.postsservice.entity.Post;
 import com.professionalnetworking.postsservice.dto.PostCreateRequestDTO;
@@ -19,6 +22,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final ModelMapper modelMapper;
+    private final ConnectionClients connectionClients;
 
 
     public PostDTO createPost(PostCreateRequestDTO postCreateDTO, Long userId) {
@@ -32,6 +36,13 @@ public class PostService {
 
     public PostDTO getPostById(Long postId) {
         log.info("Retrieving post with id: {}", postId);
+
+        Long userId = UserContextHolder.getCurrentUserId();
+        log.info("User id from header: {}", userId);
+
+        List<PersonDTO> firstDegreeConnections = connectionClients.getMyFirstDegreeConnections();
+        // TODO Send notification to all first degree connections
+
         Post post = postRepository.findById(postId).orElseThrow(() ->
                 new ResourceNotFoundException("Post not found with id: " + postId));
 
