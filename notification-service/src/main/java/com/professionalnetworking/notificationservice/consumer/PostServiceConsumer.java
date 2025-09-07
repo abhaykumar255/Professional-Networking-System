@@ -4,6 +4,7 @@ import com.professionalnetworking.notificationservice.clients.ConnectionClients;
 import com.professionalnetworking.notificationservice.dto.PersonDTO;
 import com.professionalnetworking.notificationservice.entity.Notification;
 import com.professionalnetworking.notificationservice.repository.NotificationRepository;
+import com.professionalnetworking.notificationservice.service.SendNotification;
 import com.professionalnetworking.postsservice.event.PostCreatedEvent;
 import com.professionalnetworking.postsservice.event.PostLikedEvent;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class PostServiceConsumer {
 
     private final ConnectionClients connectionClients;
     private final NotificationRepository notificationRepository;
+    private final SendNotification sendNotification;
 
     @KafkaListener(topics = "post-created-topic", groupId = "post-created-group")
     public void consumePostCreatedEvent(PostCreatedEvent event) {
@@ -29,7 +31,7 @@ public class PostServiceConsumer {
         List<PersonDTO> connections = connectionClients.getMyFirstDegreeConnections(event.getCreatorId());
 
         for (PersonDTO connection : connections ) {
-            sendNotification(connection.getUserId(), "Your Connection "+event.getCreatorId()+" has created a post");
+            sendNotification.send(connection.getUserId(), "Your Connection "+event.getCreatorId()+" has created a post");
         }
     }
 
@@ -38,16 +40,7 @@ public class PostServiceConsumer {
         log.info("Received post liked event: {}", event);
         String message = String.format("You post, %d, has been liked by %d", event.getPostId(), event.getLikedByUserId());
 
-        sendNotification(event.getCreatorId(), message);
+        sendNotification.send(event.getCreatorId(), message);
     }
 
-    public void sendNotification(Long userId, String message) {
-        log.info("Sending notification to: {}", userId);
-        Notification notification = Notification.builder()
-                .userId(userId)
-                .message(message)
-                .build();
-
-        notificationRepository.save(notification);
-    }
 }
