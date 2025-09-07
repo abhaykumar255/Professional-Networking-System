@@ -21,10 +21,10 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    public ResponseEntity<PostDTO> createPost(@RequestBody PostCreateRequestDTO postCreateDTO, HttpServletRequest httpServletRequest) {
+    public ResponseEntity<PostDTO> createPost(@RequestBody PostCreateRequestDTO postCreateDTO) {
 
         // Will be getting the user id from the JWT token
-        PostDTO postDTO = postService.createPost(postCreateDTO, 1L);
+        PostDTO postDTO = postService.createPost(postCreateDTO);
 
         return new ResponseEntity<>(postDTO, HttpStatus.CREATED);
     }

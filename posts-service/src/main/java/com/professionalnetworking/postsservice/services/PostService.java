@@ -6,11 +6,13 @@ import com.professionalnetworking.postsservice.dto.PersonDTO;
 import com.professionalnetworking.postsservice.dto.PostDTO;
 import com.professionalnetworking.postsservice.entity.Post;
 import com.professionalnetworking.postsservice.dto.PostCreateRequestDTO;
+import com.professionalnetworking.postsservice.event.PostCreatedEvent;
 import com.professionalnetworking.postsservice.exception.custom_exception.ResourceNotFoundException;
 import com.professionalnetworking.postsservice.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,13 +26,25 @@ public class PostService {
     private final ModelMapper modelMapper;
     private final ConnectionClients connectionClients;
 
+    private final KafkaTemplate<Long, PostCreatedEvent > kafkaTemplate;
 
-    public PostDTO createPost(PostCreateRequestDTO postCreateDTO, Long userId) {
 
+    public PostDTO createPost(PostCreateRequestDTO postCreateDTO) {
+
+        Long userId = UserContextHolder.getCurrentUserId();
         Post post = modelMapper.map(postCreateDTO, Post.class);
         post.setUserId(userId);
 
         Post savedPost = postRepository.save(post);
+
+        PostCreatedEvent postCreatedEvent = PostCreatedEvent.builder()
+                .creatorId(userId)
+                .postId(savedPost.getId())
+                .content(savedPost.getContent())
+                .build();
+
+        kafkaTemplate.send("post-created-topic", postCreatedEvent);
+
         return modelMapper.map(savedPost, PostDTO.class);
     }
 
@@ -40,8 +54,7 @@ public class PostService {
         Long userId = UserContextHolder.getCurrentUserId();
         log.info("User id from header: {}", userId);
 
-        List<PersonDTO> firstDegreeConnections = connectionClients.getMyFirstDegreeConnections();
-        // TODO Send notification to all first degree connections
+        //List<PersonDTO> firstDegreeConnections = connectionClients.getMyFirstDegreeConnections();
 
         Post post = postRepository.findById(postId).orElseThrow(() ->
                 new ResourceNotFoundException("Post not found with id: " + postId));
