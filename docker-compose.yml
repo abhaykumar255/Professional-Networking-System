@@ -1,6 +1,104 @@
 version: '3.8'
 
 services:
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.1
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=professional-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=false
+      - "ES_JAVA_OPTS=-Xmx1g -Xmx1g"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - professional-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.1
+    container_name: logstash
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    ports:
+      - "5044:5044"
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - professional-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9600 || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.1
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    networks:
+      - professional-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.1
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - api-gateway-logs:/var/log/api-gateway:ro
+      - posts-service-logs:/var/log/posts-service:ro
+      - user-service-logs:/var/log/user-service:ro
+      - connection-service-logs:/var/log/connection-service:ro
+      - notification-service-logs:/var/log/notification-service:ro
+      - discovery-server-logs:/var/log/discovery-server:ro
+    networks:
+      - professional-network
+    depends_on:
+      - logstash
+    restart: unless-stopped
+
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin
@@ -144,6 +242,8 @@ services:
   discovery-server:
     image: abhaykumar255/professional-system/discovery-server
     container_name: discovery-server
+    volumes:
+      - discovery-server-logs:/var/log
     ports:
       - "8761:8761"
     networks:
@@ -159,6 +259,8 @@ services:
   notification-service:
     image: abhaykumar255/professional-system/notification-service
     container_name: notification-service
+    volumes:
+      - notification-service-logs:/var/log
     networks:
       - professional-network
     depends_on:
@@ -177,6 +279,8 @@ services:
   posts-service:
     image: abhaykumar255/professional-system/posts-service
     container_name: posts-service
+    volumes:
+      - posts-service-logs:/var/log
     networks:
       - professional-network
     depends_on:
@@ -195,6 +299,8 @@ services:
   user-service:
     image: abhaykumar255/professional-system/user-service
     container_name: user-service
+    volumes:
+      - user-service-logs:/var/log
     networks:
       - professional-network
     depends_on:
@@ -213,6 +319,8 @@ services:
   connection-service:
     image: abhaykumar255/professional-system/connection-service
     container_name: connection-service
+    volumes:
+      - connection-service-logs:/var/log
     networks:
       - professional-network
     depends_on:
@@ -231,6 +339,8 @@ services:
   api-gateway:
     image: abhaykumar255/professional-system/api-gateway
     container_name: api-gateway
+    volumes:
+      - api-gateway-logs:/var/log
     ports:
       - "9000:9000"
     networks:
@@ -256,7 +366,13 @@ volumes:
   posts-db-data:
   users-db-data:
   connections-db-data:
-
+  elasticsearch-data:
+  api-gateway-logs:
+  posts-service-logs:
+  user-service-logs:
+  connection-service-logs:
+  notification-service-logs:
+  discovery-server-logs:
 
 
 
