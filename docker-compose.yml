@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - professional-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9411/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   kafka:
     image: docker.io/bitnami/kafka:3.8 #bitnami/kafka
     container_name: kafka
@@ -127,7 +142,7 @@ services:
       start_period: 40s
 
   discovery-server:
-    image: abhaykumar255/professional-system:discovery-server
+    image: abhaykumar255/professional-system/discovery-server
     container_name: discovery-server
     ports:
       - "8761:8761"
@@ -142,7 +157,7 @@ services:
       start_period: 40s
 
   notification-service:
-    image: abhaykumar255/professional-system:notification-service
+    image: abhaykumar255/professional-system/notification-service
     container_name: notification-service
     networks:
       - professional-network
@@ -150,6 +165,7 @@ services:
       - discovery-server
       - kafka
       - notifications-db
+      - zipkin
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9040/notifications/actuator/health" ]
@@ -159,7 +175,7 @@ services:
       start_period: 40s
 
   posts-service:
-    image: abhaykumar255/professional-system:posts-service
+    image: abhaykumar255/professional-system/posts-service
     container_name: posts-service
     networks:
       - professional-network
@@ -167,6 +183,7 @@ services:
       - discovery-server
       - kafka
       - posts-db
+      - zipkin
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010/posts/actuator/health" ]
@@ -176,7 +193,7 @@ services:
       start_period: 40s
 
   user-service:
-    image: abhaykumar255/professional-system:user-service
+    image: abhaykumar255/professional-system/user-service
     container_name: user-service
     networks:
       - professional-network
@@ -184,6 +201,7 @@ services:
       - discovery-server
       - kafka
       - users-db
+      - zipkin
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9020/users/actuator/health" ]
@@ -193,7 +211,7 @@ services:
       start_period: 40s
 
   connection-service:
-    image: abhaykumar255/professional-system:connection-service
+    image: abhaykumar255/professional-system/connection-service
     container_name: connection-service
     networks:
       - professional-network
@@ -201,6 +219,7 @@ services:
       - discovery-server
       - kafka
       - connections-db
+      - zipkin
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9030/connections/actuator/health" ]
@@ -210,7 +229,7 @@ services:
       start_period: 40s
 
   api-gateway:
-    image: abhaykumar255/professional-system:api-gateway
+    image: abhaykumar255/professional-system/api-gateway
     container_name: api-gateway
     ports:
       - "9000:9000"
@@ -218,6 +237,7 @@ services:
       - professional-network
     depends_on:
       - discovery-server
+      - zipkin
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/actuator/health" ]
