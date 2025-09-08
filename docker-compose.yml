@@ -127,7 +127,7 @@ services:
       start_period: 40s
 
   discovery-server:
-    image: abhaykumar255/professional-system/discovery-server
+    image: abhaykumar255/professional-system:discovery-server
     container_name: discovery-server
     ports:
       - "8761:8761"
@@ -142,7 +142,7 @@ services:
       start_period: 40s
 
   notification-service:
-    image: abhaykumar255/professional-system/notification-service
+    image: abhaykumar255/professional-system:notification-service
     container_name: notification-service
     networks:
       - professional-network
@@ -159,7 +159,7 @@ services:
       start_period: 40s
 
   posts-service:
-    image: abhaykumar255/professional-system/posts-service
+    image: abhaykumar255/professional-system:posts-service
     container_name: posts-service
     networks:
       - professional-network
@@ -176,7 +176,7 @@ services:
       start_period: 40s
 
   user-service:
-    image: abhaykumar255/professional-system/user-service
+    image: abhaykumar255/professional-system:user-service
     container_name: user-service
     networks:
       - professional-network
@@ -193,7 +193,7 @@ services:
       start_period: 40s
 
   connection-service:
-    image: abhaykumar255/professional-system/connection-service
+    image: abhaykumar255/professional-system:connection-service
     container_name: connection-service
     networks:
       - professional-network
@@ -210,7 +210,7 @@ services:
       start_period: 40s
 
   api-gateway:
-    image: abhaykumar255/professional-system/api-gateway
+    image: abhaykumar255/professional-system:api-gateway
     container_name: api-gateway
     ports:
       - "9000:9000"
