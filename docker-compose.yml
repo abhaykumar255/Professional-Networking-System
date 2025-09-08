@@ -43,11 +43,11 @@ services:
       KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldb0:8088
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 60s
 
   notifications-db:
     image: postgres:latest
@@ -58,8 +58,6 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=notificationsDB
-    ports:
-      - "5432:5432"
     networks:
       - professional-network
     restart: unless-stopped
@@ -69,6 +67,64 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  posts-db:
+    image: postgres:latest
+    container_name: posts-db
+    volumes:
+      - posts-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postsDB
+    networks:
+      - professional-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postsDB" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  users-db:
+    image: postgres:latest
+    container_name: users-db
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=usersDB
+    networks:
+      - professional-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d usersDB" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  connections-db:
+    image: neo4j:latest
+    container_name: connections-db
+    volumes:
+      - connections-db-data:/data
+    environment:
+      - NEO4J_AUTH=neo4j/password # Setting up username and password for neo4j
+    ports:
+      - "7474:7474" # HTTP Port
+      - "7687:7687" # Bolt Port
+    networks:
+      - professional-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
   discovery-server:
     image: abhaykumar255/professional-system/discovery-server
@@ -88,8 +144,6 @@ services:
   notification-service:
     image: abhaykumar255/professional-system/notification-service
     container_name: notification-service
-    ports:
-      - "9040:9040"
     networks:
       - professional-network
     depends_on:
@@ -104,6 +158,74 @@ services:
       retries: 5
       start_period: 40s
 
+  posts-service:
+    image: abhaykumar255/professional-system/posts-service
+    container_name: posts-service
+    networks:
+      - professional-network
+    depends_on:
+      - discovery-server
+      - kafka
+      - posts-db
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9010/posts/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  user-service:
+    image: abhaykumar255/professional-system/user-service
+    container_name: user-service
+    networks:
+      - professional-network
+    depends_on:
+      - discovery-server
+      - kafka
+      - users-db
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9020/users/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  connection-service:
+    image: abhaykumar255/professional-system/connection-service
+    container_name: connection-service
+    networks:
+      - professional-network
+    depends_on:
+      - discovery-server
+      - kafka
+      - connections-db
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9030/connections/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  api-gateway:
+    image: abhaykumar255/professional-system/api-gateway
+    container_name: api-gateway
+    ports:
+      - "9000:9000"
+    networks:
+      - professional-network
+    depends_on:
+      - discovery-server
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
 
 networks:
   professional-network:
@@ -111,6 +233,9 @@ networks:
 volumes:
   kafka_data:
   notifications-db-data:
+  posts-db-data:
+  users-db-data:
+  connections-db-data:
 
 
 

@@ -1,6 +1,8 @@
 package com.professionalnetworking.connectionservice.service;
 
 import com.professionalnetworking.connectionservice.auth.UserContextHolder;
+import com.professionalnetworking.connectionservice.client.UserServiceClient;
+import com.professionalnetworking.connectionservice.dto.UserDTO;
 import com.professionalnetworking.connectionservice.entity.Person;
 import com.professionalnetworking.connectionservice.event.AcceptConnectionRequestEvent;
 import com.professionalnetworking.connectionservice.event.RejectConnectionRequestEvent;
@@ -19,6 +21,7 @@ import java.util.List;
 public class ConnectionService {
 
     private final ConnectionRepository connectionRepository;
+    private final UserServiceClient userServiceClient;
 
     private final KafkaTemplate<Long, SendConnectionRequestEvent> sendKafkaTemplate;
     private final KafkaTemplate<Long, AcceptConnectionRequestEvent> acceptKafkaTemplate;
@@ -28,6 +31,8 @@ public class ConnectionService {
     public List<Person> getMyFirstDegreeConnections() {
         Long userId = UserContextHolder.getCurrentUserId();
         log.info("Retrieving first degree connections for user with id: {}", userId );
+        // Ensure person exists in the database
+        ensurePersonExists(userId);
         return connectionRepository.getFirstDegreeConnections(userId);
     }
 
@@ -44,6 +49,10 @@ public class ConnectionService {
     public Boolean sendConnectionRequest(Long receiverId) {
         Long senderId = UserContextHolder.getCurrentUserId();
         log.info("Sending connection request from user with id: {} to user with id: {}", senderId, receiverId);
+
+        // Ensure both persons exist in the database with proper names
+        ensurePersonExists(senderId);
+        ensurePersonExists(receiverId);
 
         validateConnectionRequest(senderId, receiverId);
 
@@ -68,6 +77,10 @@ public class ConnectionService {
         Long receiverId = UserContextHolder.getCurrentUserId();
         log.info("Accepting connection request from user with id: {} to user with id: {}", senderId, receiverId);
 
+        // Ensure both persons exist in the database with proper names
+        ensurePersonExists(senderId);
+        ensurePersonExists(receiverId);
+
         if (!connectionRepository.connectionRequestExists(senderId, receiverId)) {
             log.error("No connection request found");
             throw new RuntimeException("No connection request found");
@@ -91,6 +104,11 @@ public class ConnectionService {
     public Boolean rejectConnectionRequest(Long userId) {
         Long receiverId = UserContextHolder.getCurrentUserId();
         log.info("Rejecting connection request from user with id: {} to user with id: {}", userId, receiverId);
+
+        // Ensure both persons exist in the database with proper names
+        ensurePersonExists(userId);
+        ensurePersonExists(receiverId);
+
         if (!connectionRepository.connectionRequestExists(userId, receiverId)) {
             log.error("No connection request found, can not reject");
             throw new RuntimeException("No connection request found, can not reject");
@@ -104,6 +122,20 @@ public class ConnectionService {
                 .build());
 
         return true;
+    }
+
+    private void ensurePersonExists(Long userId) {
+        if (!connectionRepository.findByUserId(userId).isPresent()) {
+            try {
+                // Fetch user details from user service
+                UserDTO userDetails = userServiceClient.getUserById(userId);
+                connectionRepository.createOrUpdatePerson(userId, userDetails.getName());
+                log.info("Created person with userId: {} and name: {}", userId, userDetails.getName());
+            } catch (Exception e) {
+                log.warn("Could not fetch user details for userId: {}, creating with default name. Error: {}", userId, e.getMessage());
+                connectionRepository.createOrUpdatePersonWithDefault(userId);
+            }
+        }
     }
 
 

@@ -13,6 +13,15 @@ public interface ConnectionRepository extends Neo4jRepository<Person, Long> {
 
     Optional<Person> getByName(String name);
 
+    @Query("MATCH (p:Person {userId: $userId}) RETURN p")
+    Optional<Person> findByUserId(Long userId);
+
+    @Query("MERGE (p:Person {userId: $userId}) SET p.name = $name RETURN p")
+    void createOrUpdatePerson(Long userId, String name);
+
+    @Query("MERGE (p:Person {userId: $userId}) SET p.name = COALESCE(p.name, 'User ' + toString($userId)) RETURN p")
+    void createOrUpdatePersonWithDefault(Long userId);
+
     @Query("MATCH (p:Person {userId: $userId})-[:CONNECTED_TO]->(c:Person) RETURN c")
     List<Person> getFirstDegreeConnections(Long userId);
 
@@ -28,12 +37,13 @@ public interface ConnectionRepository extends Neo4jRepository<Person, Long> {
     boolean alreadyConnected(Long senderId, Long receiverId);
 
     @Query("MATCH (p1:Person {userId: $senderId}), (p2:Person {userId: $receiverId}) " +
-            "CREATE (p1)-[:REQUESTED_TO]->(p2)")
+            "MERGE (p1)-[:REQUESTED_TO]->(p2)")
     void addConnectionRequest(Long senderId, Long receiverId);
 
     @Query("MATCH (p1:Person {userId: $senderId})-[r:REQUESTED_TO]->(p2:Person {userId: $receiverId}) " +
             "DELETE r " +
-            "CREATE (p1)-[:CONNECTED_TO]->(p2)")
+            "MERGE (p1)-[:CONNECTED_TO]->(p2) " +
+            "MERGE (p2)-[:CONNECTED_TO]->(p1)")
     void acceptConnectionRequest(Long senderId, Long receiverId);
 
     @Query("MATCH (p1:Person {userId: $senderId})-[r:REQUESTED_TO]->(p2:Person {userId: $receiverId}) " +

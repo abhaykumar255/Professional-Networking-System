@@ -70,4 +70,15 @@ public class AuthService {
 
         log.info("Password reset successfully for user: {}", resetPasswordRequestDTO.getEmail());
     }
+
+    public UserDTO getUserById(Long userId) {
+        log.info("Attempting to get user with id: {}", userId);
+        User user = authRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("User not found with id: {}", userId);
+                    return new ResourceNotFoundException("User not found with id: " + userId);
+                });
+
+        return modelMapper.map(user, UserDTO.class);
+    }
 }
