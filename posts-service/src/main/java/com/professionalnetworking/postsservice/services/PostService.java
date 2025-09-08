@@ -12,6 +12,8 @@ import com.professionalnetworking.postsservice.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +30,7 @@ public class PostService {
 
     private final KafkaTemplate<Long, PostCreatedEvent > kafkaTemplate;
 
-
+    @CacheEvict(value = {"posts", "user-posts"}, allEntries = true)
     public PostDTO createPost(PostCreateRequestDTO postCreateDTO) {
 
         Long userId = UserContextHolder.getCurrentUserId();
@@ -48,6 +50,7 @@ public class PostService {
         return modelMapper.map(savedPost, PostDTO.class);
     }
 
+    @Cacheable(value = "posts", key = "#postId")
     public PostDTO getPostById(Long postId) {
         log.info("Retrieving post with id: {}", postId);
 
@@ -62,6 +65,7 @@ public class PostService {
         return modelMapper.map(post, PostDTO.class);
     }
 
+    @Cacheable(value = "user-posts", key = "#userId")
     public List<PostDTO> getPostsByUserId(Long userId) {
 
         List<Post> posts = postRepository.findByUserId(userId);

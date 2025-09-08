@@ -12,6 +12,8 @@ import com.professionalnetworking.userservice.utils.PasswordUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,7 +25,9 @@ public class AuthService {
     private final ModelMapper modelMapper;
     private final JwtService jwtService;
 
+    private final String CACHE_NAME = "users";
 
+    @CacheEvict(value = CACHE_NAME, key = "#result.id", condition = "#result != null")
     public UserDTO signUp(SignUpRequestDTO signUpRequestDTO) {
         log.info("Attempting to sign up user with email: {}", signUpRequestDTO.getEmail());
 
@@ -56,6 +60,7 @@ public class AuthService {
 
     }
 
+    @CacheEvict(value = CACHE_NAME, key = "#resetPasswordRequestDTO.email")
     public void resetPassword(ResetPasswordRequestDTO resetPasswordRequestDTO) {
         log.info("Attempting to reset password for user with email: {}", resetPasswordRequestDTO.getEmail());
 
@@ -71,6 +76,7 @@ public class AuthService {
         log.info("Password reset successfully for user: {}", resetPasswordRequestDTO.getEmail());
     }
 
+    @Cacheable(value = CACHE_NAME, key = "#userId")
     public UserDTO getUserById(Long userId) {
         log.info("Attempting to get user with id: {}", userId);
         User user = authRepository.findById(userId)
