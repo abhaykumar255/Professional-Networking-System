@@ -178,7 +178,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 
   notifications-db:
     image: postgres:latest
@@ -258,7 +258,7 @@ services:
       start_period: 40s
 
   discovery-server:
-    image: abhaykumar255/professional-system/discovery-server
+    image: abhaykumar255/professional-system_discovery-server
     container_name: discovery-server
     volumes:
       - discovery-server-logs:/var/log
@@ -275,7 +275,7 @@ services:
       start_period: 40s
 
   notification-service:
-    image: abhaykumar255/professional-system/notification-service
+    image: abhaykumar255/professional-system_notification-service
     container_name: notification-service
     volumes:
       - notification-service-logs:/var/log
@@ -295,7 +295,7 @@ services:
       start_period: 40s
 
   posts-service:
-    image: abhaykumar255/professional-system/posts-service
+    image: abhaykumar255/professional-system_posts-service
     container_name: posts-service
     volumes:
       - posts-service-logs:/var/log
@@ -316,7 +316,7 @@ services:
       start_period: 40s
 
   user-service:
-    image: abhaykumar255/professional-system/user-service
+    image: abhaykumar255/professional-system_user-service
     container_name: user-service
     volumes:
       - user-service-logs:/var/log
@@ -337,7 +337,7 @@ services:
       start_period: 40s
 
   connection-service:
-    image: abhaykumar255/professional-system/connection-service
+    image: abhaykumar255/professional-system_connection-service
     container_name: connection-service
     volumes:
       - connection-service-logs:/var/log
@@ -357,7 +357,7 @@ services:
       start_period: 40s
 
   api-gateway:
-    image: abhaykumar255/professional-system/api-gateway
+    image: abhaykumar255/professional-system_api-gateway
     container_name: api-gateway
     volumes:
       - api-gateway-logs:/var/log
@@ -368,6 +368,7 @@ services:
     depends_on:
       - discovery-server
       - zipkin
+      - redis
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/actuator/health" ]

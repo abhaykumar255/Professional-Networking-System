@@ -23,6 +23,18 @@ spring:
   application:
     name: api-gateway
 
+  # Add Redis Configuration
+  data:
+    redis:
+      host: redis
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
   cloud:
     gateway:
       httpclient:
@@ -35,8 +47,9 @@ spring:
       filter:
         request-rate-limiter:
           redis-rate-limiter:
-            replenish-rate: 100
-            burst-capacity: 200
+            replenish-rate: 10  # tokens per second
+            burst-capacity: 20  # maximum tokens
+            requested-tokens: 1 # tokens per request
 
       routes:
         - id: user-service
@@ -45,6 +58,11 @@ spring:
             - Path=/api/v1/users/**
           filters:
             - StripPrefix=2
+            - name: RequestRateLimiter
+              args:
+               redis-rate-limiter.replenish-rate: 5
+               redis-rate-limiter.burst-capacity: 10
+               key-resolver: "#{@userKeyResolver}"
 
         - id: posts-service
           uri: lb://POSTS-SERVICE
@@ -53,6 +71,11 @@ spring:
           filters:
             - StripPrefix=2
             - name: AuthenticationFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenish-rate: 20
+                redis-rate-limiter.burst-capacity: 40
+                key-resolver: "#{@userKeyResolver}"
 
         - id: connection-service
           uri: lb://CONNECTION-SERVICE
@@ -71,6 +94,9 @@ spring:
 
 # Zipkin Configuration
 management:
+  health:
+    redis:
+      enabled: true
   tracing:
     sampling:
       probability: 1.0
@@ -81,9 +107,9 @@ management:
     web:
       exposure:
         include: health,metrics,gateway
-    endpoint:
-      health:
-        show-details: always
+  endpoint:
+    health:
+      show-details: always
 
 
 logging:

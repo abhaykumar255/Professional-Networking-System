@@ -7,7 +7,11 @@ import com.professionalnetworking.connectionservice.entity.Person;
 import com.professionalnetworking.connectionservice.event.AcceptConnectionRequestEvent;
 import com.professionalnetworking.connectionservice.event.RejectConnectionRequestEvent;
 import com.professionalnetworking.connectionservice.event.SendConnectionRequestEvent;
+import com.professionalnetworking.connectionservice.exception.custom_exception.BadRequestException;
 import com.professionalnetworking.connectionservice.repository.ConnectionRepository;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -83,7 +87,7 @@ public class ConnectionService {
 
         if (!connectionRepository.connectionRequestExists(senderId, receiverId)) {
             log.error("No connection request found");
-            throw new RuntimeException("No connection request found");
+            throw new BadRequestException("No connection request found");
         }
         connectionRepository.acceptConnectionRequest(senderId, receiverId);
         log.info("Connection request accepted successfully from user with id: {} to user with id: {}", senderId, receiverId);
@@ -111,7 +115,7 @@ public class ConnectionService {
 
         if (!connectionRepository.connectionRequestExists(userId, receiverId)) {
             log.error("No connection request found, can not reject");
-            throw new RuntimeException("No connection request found, can not reject");
+            throw new BadRequestException("No connection request found, can not reject");
         }
         connectionRepository.rejectConnectionRequest(userId, receiverId);
         log.info("Connection request rejected successfully from user with id: {} to user with id: {}", userId, receiverId);
@@ -124,6 +128,9 @@ public class ConnectionService {
         return true;
     }
 
+    @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackEnsurePersonExists")
+    @Retry(name = "user-service")
+    @Bulkhead(name = "user-service")
     private void ensurePersonExists(Long userId) {
         if (!connectionRepository.findByUserId(userId).isPresent()) {
             try {
@@ -138,6 +145,14 @@ public class ConnectionService {
         }
     }
 
+    private void fallbackEnsurePersonExists(Long userId, Exception ex) {
+        log.warn("Circuit breaker activated for user-service. Using fallback for userId: {}. Error: {}", userId, ex.getMessage());
+        if (!connectionRepository.findByUserId(userId).isPresent()) {
+            connectionRepository.createOrUpdatePersonWithDefault(userId);
+            log.info("Created person with default name for userId: {} due to circuit breaker", userId);
+        }
+    }
+
 
     private void validateConnectionRequest(Long senderId, Long receiverId) {
         validateNotSelfRequest(senderId, receiverId);
@@ -148,21 +163,21 @@ public class ConnectionService {
     private void validateNotSelfRequest(Long senderId, Long receiverId) {
         if (senderId.equals(receiverId)) {
             log.error("Cannot send connection request to yourself");
-            throw new RuntimeException("Cannot send connection request to yourself");
+            throw new BadRequestException("Cannot send connection request to yourself");
         }
     }
 
     private void validateNotAlreadyConnected(Long senderId, Long receiverId) {
         if (connectionRepository.alreadyConnected(senderId, receiverId)) {
             log.error("You are already connected to this person");
-            throw new RuntimeException("You are already connected to this person");
+            throw new BadRequestException("You are already connected to this person");
         }
     }
 
     private void validateNoExistingRequest(Long senderId, Long receiverId) {
         if (connectionRepository.connectionRequestExists(senderId, receiverId)) {
             log.error("You have already sent a connection request to this person");
-            throw new RuntimeException("You have already sent a connection request to this person");
+            throw new BadRequestException("You have already sent a connection request to this person");
         }
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Service
 @Slf4j
@@ -29,5 +30,31 @@ public class JwtService {
                 .getPayload();
 
         return Long.parseLong(claims.getSubject());
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(getSecretKey())
+                    .build()
+                    .parseSignedClaims(token);
+            return true;
+        } catch (Exception e) {
+            log.error("Token validation failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSecretKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return claims.getExpiration().before(new Date());
+        } catch (Exception e) {
+            return true;
+        }
     }
 }
