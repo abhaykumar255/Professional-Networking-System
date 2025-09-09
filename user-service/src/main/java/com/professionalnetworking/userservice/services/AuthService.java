@@ -43,6 +43,7 @@ public class AuthService {
         return modelMapper.map(savedUser, UserDTO.class);
     }
 
+    @Cacheable(value = CACHE_NAME, key = "#loginRequestDTO.email")
     public String login(LoginRequestDTO loginRequestDTO) {
         log.info("Attempting to login user with email: {}", loginRequestDTO.getEmail());
         User user = authRepository.findByEmail(loginRequestDTO.getEmail())

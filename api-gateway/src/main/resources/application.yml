@@ -60,8 +60,8 @@ spring:
             - StripPrefix=2
             - name: RequestRateLimiter
               args:
-               redis-rate-limiter.replenish-rate: 5
-               redis-rate-limiter.burst-capacity: 10
+               redis-rate-limiter.replenish-rate: 50
+               redis-rate-limiter.burst-capacity: 100
                key-resolver: "#{@userKeyResolver}"
 
         - id: posts-service
