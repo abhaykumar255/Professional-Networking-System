@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.professionalnetworking</groupId>
 	<artifactId>api-gateway</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>api-gateway</name>
 	<description>API Gateway for Professional Networking System</description>
 	<url/>
@@ -150,6 +150,33 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<!--		This is the plugin that is used to build the docker image, that is pushed to docker hub-->
+			<plugin>
+				<groupId>com.google.cloud.tools</groupId>
+				<artifactId>jib-maven-plugin</artifactId>
+				<version>3.4.4</version>
+				<configuration>
+					<from>
+						<image>amazoncorretto:17-alpine-full</image>
+					</from>
+					<to>
+						<image>docker.io/abhaykumar255/professional-system_${project.name}:${project.version}</image>
+						<tags>
+							<tag>latest</tag>
+						</tags>
+					</to>
+					<allowInsecureRegistries>false</allowInsecureRegistries>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>build</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 
