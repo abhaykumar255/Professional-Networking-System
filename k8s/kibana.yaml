@@ -6,6 +6,9 @@ data:
   kibana.yml: |
     server.host: "0.0.0.0"
     elasticsearch.hosts: ["http://elasticsearch:9200"]
+    server.basePath: "/kibana"
+    server.rewriteBasePath: true
+    server.publicBaseUrl: "http://34.107.215.249/kibana"
 
 ---
 apiVersion: apps/v1
@@ -32,8 +35,8 @@ spec:
               memory: 1Gi
               cpu: 500m
             requests:
-              memory: 256Mi
-              cpu: 100m
+              memory: 512Mi
+              cpu: 50m
           env:
             - name: ELASTICSEARCH_URL
               value: http://elasticsearch:9200
@@ -48,13 +51,13 @@ spec:
               subPath: kibana.yml
           livenessProbe:
             httpGet:
-              path: /api/status
+              path: /kibana/api/status
               port: 5601
             initialDelaySeconds: 120
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /api/status
+              path: /kibana/api/status
               port: 5601
             initialDelaySeconds: 60
             periodSeconds: 10
