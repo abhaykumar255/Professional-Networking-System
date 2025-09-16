@@ -14,46 +14,37 @@ data:
     }
     
     filter {
+      # Parse JSON logs from containers
+      if [log][file][path] =~ /api-gateway|user-service|posts-service|connection-service|notification-service/ {
+        json {
+          source => "message"
+          target => "app_log"
+        }
+    
+        # Extract fields from parsed JSON
+        if [app_log] {
+          mutate {
+            add_field => { 
+              "service_name" => "%{[kubernetes][container][name]}"
+              "trace_id" => "%{[app_log][traceId]}"
+              "span_id" => "%{[app_log][spanId]}"
+              "log_level" => "%{[app_log][level]}"
+              "logger_name" => "%{[app_log][logger]}"
+              "log_message" => "%{[app_log][message]}"
+              "timestamp_app" => "%{[app_log][timestamp]}"
+            }
+          }
+        }
+      }
+    
       # Only process logs from your microservices
       if [kubernetes][container][name] and [kubernetes][container][name] not in ["notification-service", "posts-service", "user-service", "connection-service", "api-gateway"] {
         drop { }
       }
-      if [kubernetes][container][name] {
-        mutate {
-          add_field => { "service_name" => "%{[kubernetes][container][name]}" }
-        }
-      }
     
-      # Only process logs from your microservices
-      if [service_name] in ["notification-service", "posts-service", "user-service", "connection-service", "api-gateway"] or [log_type] == "application" {
-    
-        # Parse JSON logs from Spring Boot services
-        json {
-          source => "message"
-          target => "parsed"
-        }
-    
-        if [parsed][timestamp] {
-          date {
-            match => [ "[parsed][timestamp]", "yyyy-MM-dd HH:mm:ss.SSS" ]
-          }
-        }
-    
-        mutate {
-          add_field => {
-            "log_level" => "%{[parsed][level]}"
-            "logger_name" => "%{[parsed][logger]}"
-            "thread_name" => "%{[parsed][thread]}"
-            "trace_id" => "%{[parsed][traceId]}"
-            "span_id" => "%{[parsed][spanId]}"
-            "log_message" => "%{[parsed][message]}"
-          }
-        }
-    
-        # Only keep logs from com.professionalnetworking package
-        if [logger_name] and [logger_name] !~ /^com\.professionalnetworking/ {
-          drop { }
-        }
+      # Drop logs without trace context for now (to reduce noise)
+      if [trace_id] == "" or [trace_id] == "-" {
+        drop { }
       }
     }
     
