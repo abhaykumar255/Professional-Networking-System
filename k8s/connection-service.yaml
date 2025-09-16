@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connection-service
+  labels:
+    app: connection-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connection-service
+  template:
+    metadata:
+      labels:
+        app: connection-service
+    spec:
+      containers:
+        - name: connection-service
+          image: abhaykumar255/professional-system_connection-service
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+            - name: NEO4J_URI
+              value: neo4j://connections-db:7687
+            - name: NEO4J_USERNAME
+              value: neo4j
+            - name: NEO4J_PASSWORD
+              value: password
+          resources:
+            limits:
+              memory: 400Mi
+              cpu: 200m
+            requests:
+              memory: 200Mi
+              cpu: 50m
+          ports:
+            - containerPort: 9030
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connection-service
+spec:
+  type: ClusterIP
+  selector:
+    app: connection-service
+  ports:
+    - port: 80
+      targetPort: 9030

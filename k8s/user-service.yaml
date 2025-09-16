@@ -1,37 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: posts-service
+  name: user-service
   labels:
-    app: posts-service
+    app: user-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: posts-service
+      app: user-service
   template:
     metadata:
-      name: posts-service
       labels:
-        app: posts-service
+        app: user-service
     spec:
       containers:
-        - name: posts-service
-          image: abhaykumar255/professional-system_posts-service
+        - name: user-service
+          image: abhaykumar255/professional-system_user-service
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: k8s
-            - name: CONNECTION_SERVICE_URL
-              value: http://connection-service
             - name: DB_USER
               value: postgres
             - name: DB_PASSWORD
               value: password
             - name: DB_NAME
-              value: postsDB
+              value: usersDB
             - name: DB_SERVICE
-              value: posts-db # Will be same as the serviceName in posts-db.yaml
+              value: users-db
           resources:
             limits:
               memory: 400Mi
@@ -40,21 +37,18 @@ spec:
               memory: 200Mi
               cpu: 50m
           ports:
-            - containerPort: 9010
+            - containerPort: 9020
       restartPolicy: Always
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: posts-service
+  name: user-service
 spec:
   type: ClusterIP
+  selector:
+    app: user-service
   ports:
     - port: 80
-      targetPort: 9010
-  selector:
-    app: posts-service
-
-
-      
+      targetPort: 9020

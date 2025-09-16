@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: abhaykumar255/professional-system_api-gateway
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+          resources:
+            limits:
+              memory: 400Mi
+              cpu: 200m
+            requests:
+              memory: 200Mi
+              cpu: 100m
+          ports:
+            - containerPort: 9000
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  annotations:
+    cloud.google.com/backend-config: '{"default": "backend-config"}'
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - port: 80
+      targetPort: 9000
+  type: ClusterIP

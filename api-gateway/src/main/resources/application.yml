@@ -52,8 +52,39 @@ spring:
             requested-tokens: 1 # tokens per request
 
       routes:
+
+        # Health check routes
+        - id: user-service-health
+          uri: ${USER_SERVICE_URL:lb://USER-SERVICE}
+          predicates:
+            - Path=/users/actuator/**
+          filters:
+            - StripPrefix=1
+
+        - id: posts-service-health
+          uri: ${POSTS_SERVICE_URL:lb://POSTS-SERVICE}
+          predicates:
+            - Path=/posts/actuator/**
+          filters:
+            - StripPrefix=1
+
+        - id: connection-service-health
+          uri: ${CONNECTION_SERVICE_URL:lb://CONNECTION-SERVICE}
+          predicates:
+            - Path=/connections/actuator/**
+          filters:
+            - StripPrefix=1
+
+        - id: notification-service-health
+          uri: ${NOTIFICATION_SERVICE_URL:lb://NOTIFICATION-SERVICE}
+          predicates:
+            - Path=/notifications/actuator/**
+          filters:
+            - StripPrefix=1
+
+
         - id: user-service
-          uri: lb://USER-SERVICE
+          uri: ${USER_SERVICE_URL:lb://USER-SERVICE}
           predicates:
             - Path=/api/v1/users/**
           filters:
@@ -65,7 +96,7 @@ spring:
                key-resolver: "#{@userKeyResolver}"
 
         - id: posts-service
-          uri: lb://POSTS-SERVICE
+          uri: ${POSTS_SERVICE_URL:lb://POSTS-SERVICE}
           predicates:
             - Path=/api/v1/posts/**
           filters:
@@ -78,12 +109,13 @@ spring:
                 key-resolver: "#{@userKeyResolver}"
 
         - id: connection-service
-          uri: lb://CONNECTION-SERVICE
+          uri: ${CONNECTION_SERVICE_URL:lb://CONNECTION-SERVICE}
           predicates:
             - Path=/api/v1/connections/**
           filters:
             - StripPrefix=2
             - name: AuthenticationFilter
+
 
     loadbalancer:
       retry:
@@ -106,10 +138,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,gateway
+        include: "*"
   endpoint:
     health:
       show-details: always
+    gateway:
+      enabled: true
 
 
 logging:
