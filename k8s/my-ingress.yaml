@@ -7,37 +7,37 @@ metadata:
   annotations:
     kubernetes.io/ingress.allow-http: "true"
     kubernetes.io/ingress.class: "gce"
-    cloud.google.com/backend-config: '{"ports": {"80":"api-gateway-backend-config","8080":"kafka-ui-backend-config","9411":"zipkin-backend-config","5601":"kibana-backend-config"}}'
+    cloud.google.com/backend-config: '{"ports": {"9000":"api-gateway-backend-config","8080":"kafka-ui-backend-config","9411":"zipkin-backend-config","5601":"kibana-backend-config"}}'
 spec:
   ingressClassName: "gce"
   rules:
     - http:
         paths:
+          - path: "/kafka-ui"
+            pathType: Prefix
+            backend:
+              service:
+                name: kafka-ui
+                port:
+                  number: 8080
+          - path: "/zipkin"
+            pathType: Prefix
+            backend:
+              service:
+                name: zipkin
+                port:
+                  number: 9411
+          - path: "/kibana"
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana
+                port:
+                  number: 5601
           - path: "/"
             pathType: Prefix
             backend:
               service:
                 name: api-gateway
                 port:
-                  number: 80
-          - path: "/kafkaUi/*"
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: kafka-ui
-                port:
-                  number: 8080
-          - path: "/zipkin/*"
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: zipkin
-                port:
-                  number: 9411
-          - path: "/kibana/*"
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: kibana
-                port:
-                  number: 5601
+                  number: 9000

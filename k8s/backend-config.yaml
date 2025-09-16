@@ -22,7 +22,10 @@ spec:
     healthyThreshold: 1
     unhealthyThreshold: 3
     type: HTTP
-    requestPath: /
+    requestPath: /kafka-ui/actuator/health
+  customRequestHeaders:
+    headers:
+    - "X-Forwarded-Prefix:/kafka-ui"
 ---
 apiVersion: cloud.google.com/v1
 kind: BackendConfig

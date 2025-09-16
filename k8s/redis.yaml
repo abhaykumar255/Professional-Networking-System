@@ -64,4 +64,4 @@ spec:
   ports:
     - port: 6379
       targetPort: 6379
-  clusterIP: None
+  type: ClusterIP

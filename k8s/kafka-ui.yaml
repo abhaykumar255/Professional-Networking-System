@@ -15,11 +15,20 @@ spec:
       containers:
         - name: kafka-ui
           image: ghcr.io/kafbat/kafka-ui
+          resources:
+            limits:
+              memory: 900Mi
+              cpu: 500m
+            requests:
+              memory: 400Mi
+              cpu: 200m
           env:
             - name: KAFKA_CLUSTERS_0_NAME
               value: local
             - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
               value: kafka:9092
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: /kafka-ui
           ports:
             - containerPort: 8080
 ---
