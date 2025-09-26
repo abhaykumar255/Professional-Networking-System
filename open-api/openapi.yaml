@@ -1,0 +1,453 @@
+openapi: 3.0.3
+info:
+  title: Professional Networking System API
+  description: |
+    A comprehensive microservices-based professional networking platform built with Spring Boot.
+    
+    ## Architecture
+    This system follows a microservices architecture with the following services:
+    - **API Gateway** - Entry point for all client requests
+    - **User Service** - User management and authentication
+    - **Posts Service** - Content creation and management
+    - **Connection Service** - Professional networking and relationships
+    - **Notification Service** - Real-time notifications
+    
+    ## Authentication
+    All endpoints (except auth endpoints) require JWT Bearer token authentication.
+  version: 1.0.0
+  contact:
+    name: Professional Networking System
+    email: support@professionalnetworking.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:9000/api/v1
+    description: Local development server
+  - url: http://34.107.215.249/api/v1
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+paths:
+  # User Service Endpoints
+  /users/auth/signup:
+    post:
+      tags:
+        - User Service
+      summary: User SignUp
+      description: Register a new user account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequestDTO'
+            example:
+              name: "Abhay"
+              email: "abhay@gmail.com"
+              password: "abhay"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '400':
+          description: Bad request - validation errors
+
+  /users/auth/login:
+    post:
+      tags:
+        - User Service
+      summary: User Login
+      description: Authenticate user and return JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDTO'
+            example:
+              email: "bhanu@gmail.com"
+              password: "bhanu"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: string
+                description: JWT token
+        '400':
+          description: Invalid credentials
+
+  /users/auth/reset-password:
+    post:
+      tags:
+        - User Service
+      summary: Reset Password
+      description: Reset user password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequestDTO'
+            example:
+              email: "kaushal@gmail.com"
+              newPassword: "kaushal"
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          description: Bad request
+
+  /users/auth/{userId}:
+    get:
+      tags:
+        - User Service
+      summary: Get User By Id
+      description: Retrieve user details by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '404':
+          description: User not found
+
+  # Posts Service Endpoints
+  /posts/core:
+    post:
+      tags:
+        - Post Service
+      summary: Create Post
+      description: Create a new post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequestDTO'
+            example:
+              content: "Gaya"
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDTO'
+        '400':
+          description: Bad request
+
+  /posts/core/{postId}:
+    get:
+      tags:
+        - Post Service
+      summary: Get User Posts
+      description: Get post by ID
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDTO'
+        '404':
+          description: Post not found
+
+  /posts/core/users/{userId}/posts:
+    get:
+      tags:
+        - Post Service
+      summary: GetAllPostsByUserId
+      description: Get all posts by user ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostDTO'
+
+  /posts/likes/{postId}:
+    post:
+      tags:
+        - Post Service
+      summary: Like Post
+      description: Like a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Post liked successfully
+        '400':
+          description: Bad request
+
+    delete:
+      tags:
+        - Post Service
+      summary: Unlike Post
+      description: Unlike a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Post unliked successfully
+        '400':
+          description: Bad request
+
+  # Connection Service Endpoints
+  /connections/core/first-degree:
+    get:
+      tags:
+        - Connection Service
+      summary: Get 1 Degree Connection
+      description: Get first degree connections
+      responses:
+        '200':
+          description: First degree connections retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonDTO'
+
+  /connections/core/request/{userId}:
+    post:
+      tags:
+        - Connection Service
+      summary: Send Connection Request
+      description: Send connection request to user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Connection request sent successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          description: Bad request
+
+  /connections/core/accept/{userId}:
+    post:
+      tags:
+        - Connection Service
+      summary: Accept Connection Request
+      description: Accept connection request from user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Connection request accepted successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          description: Bad request
+
+  /connections/core/reject/{userId}:
+    post:
+      tags:
+        - Connection Service
+      summary: Reject Request
+      description: Reject connection request from user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Connection request rejected successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          description: Bad request
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # User Service DTOs
+    SignUpRequestDTO:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          description: User's full name
+        email:
+          type: string
+          format: email
+          pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$'
+          description: User's email address
+        password:
+          type: string
+          description: User's password
+
+    LoginRequestDTO:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$'
+          description: User's email address
+        password:
+          type: string
+          description: User's password
+
+    ResetPasswordRequestDTO:
+      type: object
+      required:
+        - email
+        - newPassword
+      properties:
+        email:
+          type: string
+          format: email
+          pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$'
+          description: User's email address
+        newPassword:
+          type: string
+          description: New password
+
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: User ID
+        name:
+          type: string
+          description: User's full name
+        email:
+          type: string
+          format: email
+          description: User's email address
+
+    # Posts Service DTOs
+    PostCreateRequestDTO:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Post content
+
+    PostDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Post ID
+        content:
+          type: string
+          description: Post content
+        userId:
+          type: integer
+          format: int64
+          description: User ID who created the post
+        createdAt:
+          type: string
+          format: date-time
+          description: Post creation timestamp
+
+    # Connection Service DTOs
+    PersonDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Person ID
+        userId:
+          type: integer
+          format: int64
+          description: User ID
+        name:
+          type: string
+          description: Person's name
+
+tags:
+  - name: User Service
+    description: User management and authentication operations
+  - name: Post Service
+    description: Post creation and management operations
+  - name: Connection Service
+    description: Professional networking and connection operations
+  - name: Notification Service
+    description: Real-time notification operations
