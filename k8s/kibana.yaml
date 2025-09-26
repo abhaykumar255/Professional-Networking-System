@@ -8,7 +8,7 @@ data:
     elasticsearch.hosts: ["http://elasticsearch:9200"]
     server.basePath: "/kibana"
     server.rewriteBasePath: true
-    server.publicBaseUrl: "http://34.107.215.249/kibana"
+    server.publicBaseUrl: "http://34.107.201.81/kibana"
 
 ---
 apiVersion: apps/v1

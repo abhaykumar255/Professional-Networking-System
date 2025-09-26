@@ -25,8 +25,8 @@ kubectl apply -f kafka-ui.yaml
 echo "5. Deploying Zipkin..."
 kubectl apply -f zipkin.yaml
 
-echo "6. Deploying Discovery Server..."
-kubectl apply -f discovery-server.yaml
+#echo "6. Deploying Discovery Server..."
+#kubectl apply -f discovery-server.yaml
 
 echo "Waiting for infrastructure to be ready..."
 sleep 60
