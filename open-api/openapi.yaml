@@ -59,6 +59,10 @@ paths:
                 $ref: '#/components/schemas/UserDTO'
         '400':
           description: Bad request - validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /users/auth/login:
     post:
@@ -86,6 +90,10 @@ paths:
                 description: JWT token
         '400':
           description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /users/auth/reset-password:
     post:
@@ -108,6 +116,10 @@ paths:
           description: Password reset successful
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /users/auth/{userId}:
     get:
@@ -131,6 +143,10 @@ paths:
                 $ref: '#/components/schemas/UserDTO'
         '404':
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   # Posts Service Endpoints
   /posts/core:
@@ -146,7 +162,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PostCreateRequestDTO'
             example:
-              content: "Gaya"
+              content: "Excited to share my latest project!"
       responses:
         '201':
           description: Post created successfully
@@ -156,12 +172,42 @@ paths:
                 $ref: '#/components/schemas/PostDTO'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    get:
+      tags:
+        - Post Service
+      summary: Get All Posts
+      description: Retrieve all posts with pagination
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostDTO'
 
   /posts/core/{postId}:
     get:
       tags:
         - Post Service
-      summary: Get User Posts
+      summary: Get Post By ID
       description: Get post by ID
       parameters:
         - name: postId
@@ -179,12 +225,70 @@ paths:
                 $ref: '#/components/schemas/PostDTO'
         '404':
           description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    put:
+      tags:
+        - Post Service
+      summary: Update Post
+      description: Update an existing post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequestDTO'
+      responses:
+        '200':
+          description: Post updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDTO'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    delete:
+      tags:
+        - Post Service
+      summary: Delete Post
+      description: Delete a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Post deleted successfully
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /posts/core/users/{userId}/posts:
     get:
       tags:
         - Post Service
-      summary: GetAllPostsByUserId
+      summary: Get All Posts By User ID
       description: Get all posts by user ID
       parameters:
         - name: userId
@@ -193,6 +297,16 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
       responses:
         '200':
           description: Posts retrieved successfully
@@ -219,8 +333,16 @@ paths:
       responses:
         '200':
           description: Post liked successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
     delete:
       tags:
@@ -237,19 +359,64 @@ paths:
       responses:
         '200':
           description: Post unliked successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /posts/likes/{postId}/count:
+    get:
+      tags:
+        - Post Service
+      summary: Get Like Count
+      description: Get the number of likes for a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Like count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: integer
 
   # Connection Service Endpoints
   /connections/core/first-degree:
     get:
       tags:
         - Connection Service
-      summary: Get 1 Degree Connection
+      summary: Get First Degree Connections
       description: Get first degree connections
       responses:
         '200':
           description: First degree connections retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonDTO'
+
+  /connections/core/second-degree:
+    get:
+      tags:
+        - Connection Service
+      summary: Get Second Degree Connections
+      description: Get second degree connections (suggestions)
+      responses:
+        '200':
+          description: Second degree connections retrieved successfully
           content:
             application/json:
               schema:
@@ -279,6 +446,10 @@ paths:
                 type: boolean
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /connections/core/accept/{userId}:
     post:
@@ -302,12 +473,16 @@ paths:
                 type: boolean
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /connections/core/reject/{userId}:
     post:
       tags:
         - Connection Service
-      summary: Reject Request
+      summary: Reject Connection Request
       description: Reject connection request from user
       parameters:
         - name: userId
@@ -325,6 +500,183 @@ paths:
                 type: boolean
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /connections/core/pending-requests:
+    get:
+      tags:
+        - Connection Service
+      summary: Get Pending Requests
+      description: Get all pending connection requests
+      responses:
+        '200':
+          description: Pending requests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConnectionRequestDTO'
+
+  /connections/core/sent-requests:
+    get:
+      tags:
+        - Connection Service
+      summary: Get Sent Requests
+      description: Get all sent connection requests
+      responses:
+        '200':
+          description: Sent requests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConnectionRequestDTO'
+
+  # Notification Service Endpoints
+  /notifications:
+    get:
+      tags:
+        - Notification Service
+      summary: Get User Notifications
+      description: Get all notifications for the authenticated user
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationDTO'
+
+  /notifications/{notificationId}/read:
+    put:
+      tags:
+        - Notification Service
+      summary: Mark Notification as Read
+      description: Mark a specific notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Notification marked as read
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /notifications/mark-all-read:
+    put:
+      tags:
+        - Notification Service
+      summary: Mark All Notifications as Read
+      description: Mark all notifications as read for the authenticated user
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notification Service
+      summary: Get Unread Count
+      description: Get the count of unread notifications
+      responses:
+        '200':
+          description: Unread count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: integer
+
+  # Health Check Endpoints
+  /users/actuator/health:
+    get:
+      tags:
+        - Health Checks
+      summary: User Service Health
+      description: Check User Service health status
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /posts/actuator/health:
+    get:
+      tags:
+        - Health Checks
+      summary: Posts Service Health
+      description: Check Posts Service health status
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /connections/actuator/health:
+    get:
+      tags:
+        - Health Checks
+      summary: Connection Service Health
+      description: Check Connection Service health status
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /notifications/actuator/health:
+    get:
+      tags:
+        - Health Checks
+      summary: Notification Service Health
+      description: Check Notification Service health status
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
 
 components:
   securitySchemes:
@@ -345,6 +697,8 @@ components:
         name:
           type: string
           description: User's full name
+          minLength: 2
+          maxLength: 100
         email:
           type: string
           format: email
@@ -353,6 +707,8 @@ components:
         password:
           type: string
           description: User's password
+          minLength: 6
+          maxLength: 100
 
     LoginRequestDTO:
       type: object
@@ -383,6 +739,8 @@ components:
         newPassword:
           type: string
           description: New password
+          minLength: 6
+          maxLength: 100
 
     UserDTO:
       type: object
@@ -398,14 +756,22 @@ components:
           type: string
           format: email
           description: User's email address
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
 
     # Posts Service DTOs
     PostCreateRequestDTO:
       type: object
+      required:
+        - content
       properties:
         content:
           type: string
           description: Post content
+          minLength: 1
+          maxLength: 5000
 
     PostDTO:
       type: object
@@ -421,10 +787,23 @@ components:
           type: integer
           format: int64
           description: User ID who created the post
+        authorName:
+          type: string
+          description: Name of the post author
+        likeCount:
+          type: integer
+          description: Number of likes
+        isLikedByCurrentUser:
+          type: boolean
+          description: Whether the current user has liked this post
         createdAt:
           type: string
           format: date-time
           description: Post creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Post last update timestamp
 
     # Connection Service DTOs
     PersonDTO:
@@ -441,6 +820,134 @@ components:
         name:
           type: string
           description: Person's name
+        email:
+          type: string
+          format: email
+          description: Person's email
+
+    ConnectionRequestDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Connection request ID
+        senderId:
+          type: integer
+          format: int64
+          description: ID of the user who sent the request
+        receiverId:
+          type: integer
+          format: int64
+          description: ID of the user who received the request
+        senderName:
+          type: string
+          description: Name of the sender
+        receiverName:
+          type: string
+          description: Name of the receiver
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED]
+          description: Status of the connection request
+        createdAt:
+          type: string
+          format: date-time
+          description: Request creation timestamp
+
+    # Notification Service DTOs
+    NotificationDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Notification ID
+        userId:
+          type: integer
+          format: int64
+          description: User ID who should receive the notification
+        type:
+          type: string
+          enum: [CONNECTION_REQUEST, CONNECTION_ACCEPTED, POST_LIKED, POST_CREATED]
+          description: Type of notification
+        title:
+          type: string
+          description: Notification title
+        message:
+          type: string
+          description: Notification message
+        isRead:
+          type: boolean
+          description: Whether the notification has been read
+        relatedEntityId:
+          type: integer
+          format: int64
+          description: ID of the related entity (post, user, etc.)
+        createdAt:
+          type: string
+          format: date-time
+          description: Notification creation timestamp
+
+    # Common DTOs
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Error message
+        statusCode:
+          type: string
+          description: HTTP status code name
+        status:
+          type: integer
+          description: HTTP status code number
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path where error occurred
+        method:
+          type: string
+          description: HTTP method
+        traceId:
+          type: string
+          description: Distributed tracing ID
+        validationErrors:
+          type: object
+          additionalProperties:
+            type: string
+          description: Field validation errors
+        details:
+          type: array
+          items:
+            type: string
+          description: Additional error details
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+          description: Overall health status
+        components:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+              details:
+                type: object
+                additionalProperties: true
+          description: Health status of individual components
 
 tags:
   - name: User Service
@@ -451,3 +958,5 @@ tags:
     description: Professional networking and connection operations
   - name: Notification Service
     description: Real-time notification operations
+  - name: Health Checks
+    description: Service health monitoring endpoints

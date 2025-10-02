@@ -33,7 +33,7 @@ This Professional Networking System is a LinkedIn-like platform designed using m
 <img src="_projectArchitecture/network_services.png" alt="Network Services" style="width: 100%; height: auto; max-width: 100%;">
 
 ### Live Demo
-🔗 [Live Demo](http://34.107.201.81) | 📖 [API Documentation](http://34.107.201.81:9020/users/swagger-ui.html)
+🔗 [Live Demo](http://34.107.201.81) | 📖 [API Documentation](http://34.107.201.81:9020/users/swagger-ui.html) | 📋 [API Reference](open-api/API.md)
 
 ## 🏗️ Architecture Overview
 
